@@ -43,10 +43,12 @@ def get_checkpoint(topic: str) -> dict:
 @router.post("/checkpoint/{topic}/evaluate")
 def evaluate_checkpoint(topic: str, body: CheckpointSubmission) -> dict:
     """Grade against the rubric; pass unlocks the next stage."""
+    rubric = "\n".join(f"- {point}" for point in body.rubric) or "- (no rubric given)"
     prompt = (
-        f"Topic: {topic}\nStudent answer:\n{body.answer}\n\n"
-        "Grade on whether the answer connects the concepts a human expert "
-        "would require. Return JSON:\n"
+        f"Topic: {topic}\nQuestion: {body.question}\nRubric:\n{rubric}\n"
+        f"Student answer:\n{body.answer}\n\n"
+        "Grade against the rubric, on whether the answer connects the concepts "
+        "a human expert would require. Return JSON:\n"
         '{"passed": true|false, "score": 0.0-1.0, '
         '"feedback": "...", "unlocks_stage": "..."}'
     )

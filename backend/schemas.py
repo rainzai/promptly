@@ -14,11 +14,23 @@ class TopicRequest(BaseModel):
     notes: str | None = Field(None, description="Extra context or free text notes")
 
 
+class PlacementQuestion(BaseModel):
+    level: str
+    question: str
+    options: list[str]
+    answer: int
+
+
 class PlacementCheck(BaseModel):
     topic: str
-    answers: list[str] = Field(..., description="User answers, one per question")
+    questions: list[PlacementQuestion] = Field(
+        ..., description="The questions exactly as returned by /api/placement/check"
+    )
+    answers: list[int] = Field(..., description="Index of the chosen option, one per question")
 
 
 class CheckpointSubmission(BaseModel):
     topic: str
+    question: str = Field(..., description="The question from POST /api/checkpoint/{topic}")
+    rubric: list[str] = Field(default_factory=list, description="The rubric returned with it")
     answer: str

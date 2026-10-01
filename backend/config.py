@@ -9,7 +9,7 @@ load_dotenv()
 
 LLM_API_BASE_URL: str = os.getenv("LLM_API_BASE_URL", "https://llmproxy.uva.nl")
 LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
-# Override after listing models: `python -m backend.helper` shows what's available.
+# Override after listing models: `cd backend && python helper.py` shows what's available.
 LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
 # Number of characters of uploaded material sent to the LLM.
