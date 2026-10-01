@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getLecture, getQuiz } from '../../api.js'
+import AppLayout from '../AppLayout.jsx'
 import Button from '../Button.jsx'
 import Icon from '../Icon.jsx'
-import Logo from '../Logo.jsx'
 import Mascot from '../Mascot.jsx'
 import QuizStep from './QuizStep.jsx'
 import TopicStep from './TopicStep.jsx'
 import UploadStep from './UploadStep.jsx'
-import Working from './Working.jsx'
+import Working from '../Working.jsx'
 
 const STEPS = ['Upload slides', 'Pick a topic', 'Quiz']
 
@@ -42,7 +42,7 @@ function useRoute() {
 
 function Stepper({ step }) {
   return (
-    <ol aria-label="Progress" className="flex items-center gap-2 sm:gap-3">
+    <ol aria-label="Progress" className="flex items-center gap-2 pt-2 sm:gap-3 sm:pt-4">
       {STEPS.map((label, i) => {
         const done = i < step
         const current = i === step
@@ -61,7 +61,7 @@ function Stepper({ step }) {
             </span>
             <span
               className={`text-[13px] font-medium ${current ? 'text-ink' : 'text-muted'} ${
-                current ? 'sr-only lg:not-sr-only' : 'sr-only xl:not-sr-only'
+                current ? 'sr-only sm:not-sr-only' : 'sr-only md:not-sr-only'
               }`}
             >
               {label}
@@ -105,10 +105,6 @@ export default function LearnPage() {
   // A failed load only counts for the route it was for, so navigating away clears it.
   const [failure, setFailure] = useState(null)
   const [attempt, setAttempt] = useState(0)
-
-  useEffect(() => {
-    document.title = 'Start learning — Promptly'
-  }, [])
 
   const needLecture = Boolean(route.lectureId) && lecture?.lecture_id !== route.lectureId
   const needQuiz = Boolean(route.quizId) && quiz?.quiz_id !== route.quizId
@@ -179,13 +175,9 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="relative isolate min-h-svh">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(ellipse_55%_60%_at_85%_0%,rgba(139,26,43,0.07),transparent_70%),radial-gradient(ellipse_50%_55%_at_0%_10%,rgba(227,150,47,0.08),transparent_70%)]" />
-      <header className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:py-6">
-        <Logo />
-        <Stepper step={step} />
-      </header>
-      <main className="mx-auto w-full max-w-[880px] px-5 pb-20 sm:px-8">{view}</main>
-    </div>
+    <AppLayout title="Start learning">
+      <Stepper step={step} />
+      {view}
+    </AppLayout>
   )
 }

@@ -19,10 +19,9 @@ import random
 import threading
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 import helper
 import pdf_utils
@@ -193,17 +192,6 @@ _QUIZZES: dict[str, _QuizState] = {}
 _ANSWER_LOCK = threading.Lock()
 
 
-def _ask(schema: type[BaseModel], system: str, user: str) -> Any:
-    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-    # Long structured answers are occasionally malformed; one retry usually fixes it.
-    for _ in range(2):
-        try:
-            return schema.model_validate(helper.chat_json(messages))
-        except ValidationError as exc:
-            error = exc
-    raise helper.LLMError(f"Model response had the wrong shape: {error}") from error
-
-
 def _result(level: int, q: Question, chosen: int) -> QuestionResult:
     correct = chosen == q.answer_index
     return QuestionResult(
@@ -254,7 +242,9 @@ def create_lecture(file: UploadFile = File(...)) -> LectureOut:
     material = pdf_utils.summarize_pdf(file.file)
     if not material["text"].strip():
         raise HTTPException(422, "No text found in the PDF. Scanned slides are not supported.")
-    analysis = _ask(LectureAnalysis, _PREREQUISITES_PROMPT, f"Lecture slides:\n{material['text']}")
+    analysis = helper.chat_model(
+        LectureAnalysis, _PREREQUISITES_PROMPT, f"Lecture slides:\n{material['text']}"
+    )
     lecture = LectureOut(
         lecture_id=uuid.uuid4().hex,
         title=analysis.title,
@@ -282,7 +272,7 @@ def create_quiz(lecture_id: str, body: QuizRequest) -> QuizOut:
     if lecture is None:
         raise HTTPException(404, "Lecture not found")
     subject = " ".join(body.prerequisite.split())
-    generated = _ask(
+    generated = helper.chat_model(
         GeneratedQuiz,
         _QUIZ_PROMPT,
         f"Prerequisite topic: {subject}\n\nLecture slides:\n{lecture.text}",

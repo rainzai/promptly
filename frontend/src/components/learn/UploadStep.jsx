@@ -3,8 +3,8 @@ import { uploadLecture } from '../../api.js'
 import Button from '../Button.jsx'
 import Icon from '../Icon.jsx'
 import Mascot from '../Mascot.jsx'
-import Working from './Working.jsx'
-import { Alert, Eyebrow, Lead, Title } from './ui.jsx'
+import Working from '../Working.jsx'
+import { Alert, Eyebrow, Lead, Title } from '../ui.jsx'
 
 const HOW_IT_WORKS = [
   { icon: 'upload', title: 'Upload your slides', text: 'Any lecture, as a PDF.' },

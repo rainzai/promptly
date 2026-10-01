@@ -59,3 +59,41 @@ export const answerQuestion = (quizId, questionId, answer) =>
   request(`/quizzes/${id(quizId)}/questions/${questionId}/answer`, post({ answer }))
 
 export const getProgress = (user) => request(`/progress/${id(user)}`)
+
+// PLAY: reverse-prompt challenges
+
+export const createChallenge = (user) => request('/challenges', post({ user }))
+
+export const getChallenge = (challengeId) => request(`/challenges/${id(challengeId)}`)
+
+/** Score a prompt; returns {challenge, change} where change is the expertise update. */
+export const submitAttempt = (challengeId, prompt) =>
+  request(`/challenges/${id(challengeId)}/attempts`, post({ prompt }))
+
+export const revealChallenge = (challengeId) =>
+  request(`/challenges/${id(challengeId)}/reveal`, post({}))
+
+// PROGRESS: prompt expertise
+
+export const getExpertise = (user) => request(`/expertise/${id(user)}`)
+
+// CONTRIBUTE: peer help with prompts
+
+export const askForHelp = (user, goal, prompt, aiResponse) =>
+  request('/help-requests', post({ user, goal, prompt, ai_response: aiResponse || null }))
+
+export const getMyHelpRequests = (user) => request(`/help-requests?user=${id(user)}`)
+
+export const getHelpRequest = (requestId) => request(`/help-requests/${id(requestId)}`)
+
+export const rateReview = (requestId, user, helped) =>
+  request(`/help-requests/${id(requestId)}/rating`, post({ user, helped }))
+
+export const getReviewQueue = (reviewer) => request(`/reviews/queue?reviewer=${id(reviewer)}`)
+
+/** Let the AI check a draft revision; nothing is saved. */
+export const checkReview = (requestId, reviewer, revisedPrompt, note) =>
+  request(`/help-requests/${id(requestId)}/check`, post({ reviewer, revised_prompt: revisedPrompt, note }))
+
+export const submitReview = (requestId, reviewer, revisedPrompt, note) =>
+  request(`/help-requests/${id(requestId)}/review`, post({ reviewer, revised_prompt: revisedPrompt, note }))

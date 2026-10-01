@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import Button from '../Button.jsx'
-import Mascot from '../Mascot.jsx'
+import Button from './Button.jsx'
+import Mascot from './Mascot.jsx'
 
 // Shown while the AI reads slides or writes a quiz, which can take up to a minute.
 export default function Working({ title, messages = [], note, onCancel }) {

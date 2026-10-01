@@ -1,27 +1,10 @@
 import { useState } from 'react'
 import { createQuiz } from '../../api.js'
+import { saveName, savedName } from '../../user.js'
 import Button from '../Button.jsx'
 import Icon from '../Icon.jsx'
-import Working from './Working.jsx'
-import { Alert, Eyebrow, Lead, Title } from './ui.jsx'
-
-const NAME_KEY = 'promptly.name'
-
-function savedName() {
-  try {
-    return localStorage.getItem(NAME_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-function saveName(name) {
-  try {
-    localStorage.setItem(NAME_KEY, name)
-  } catch {
-    // Private mode: the name just won't be remembered.
-  }
-}
+import Working from '../Working.jsx'
+import { Alert, Eyebrow, Lead, Title } from '../ui.jsx'
 
 const WRITING = [
   'Deciding what matters most for this lecture…',

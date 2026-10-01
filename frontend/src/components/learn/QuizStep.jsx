@@ -3,7 +3,7 @@ import { answerQuestion, getProgress, getQuiz } from '../../api.js'
 import Button from '../Button.jsx'
 import Icon from '../Icon.jsx'
 import Mascot from '../Mascot.jsx'
-import { Alert, Eyebrow, RankCard } from './ui.jsx'
+import { Alert, Eyebrow, RankCard } from '../ui.jsx'
 
 const LETTERS = 'ABCD'
 

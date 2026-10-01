@@ -6,13 +6,15 @@ with an ``x-litellm-api-key`` header. Ready-made functions:
 - :func:`list_models`      -> what models the proxy exposes
 - :func:`chat`             -> free-form prompt, returns assistant text
 - :func:`chat_json`        -> prompt expecting a JSON object/array on stdout
+- :func:`chat_model`       -> JSON validated against a pydantic model
 """
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, TypeVar
 
 import requests
+from pydantic import BaseModel, ValidationError
 
 from config import LLM_API_BASE_URL, LLM_API_KEY, LLM_MODEL
 
@@ -94,6 +96,23 @@ def chat_json(
         except json.JSONDecodeError:
             pass
     raise LLMError(f"Model did not return valid JSON: {content[:500]}")
+
+
+Model = TypeVar("Model", bound=BaseModel)
+
+
+def chat_model(schema: type[Model], system: str, user: str, *, temperature: float = 0.2) -> Model:
+    """Ask for a JSON object and validate it against a pydantic model.
+
+    Long structured answers are occasionally malformed; one retry usually fixes it.
+    """
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    for _ in range(2):
+        try:
+            return schema.model_validate(chat_json(messages, temperature=temperature))
+        except ValidationError as exc:
+            error = exc
+    raise LLMError(f"Model response had the wrong shape: {error}") from error
 
 
 if __name__ == "__main__":  # pragma: no cover
