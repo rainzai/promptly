@@ -1,60 +1,80 @@
+import { useEffect, useState } from 'react'
 import Button from './Button.jsx'
+import Icon from './Icon.jsx'
+import Mascot from './Mascot.jsx'
 
-function FoundationMark() {
-  return (
-    <svg
-      className="shrink-0 text-crimson"
-      viewBox="0 0 32 32"
-      width="28"
-      height="28"
-      aria-hidden="true"
-    >
-      <rect x="4" y="22" width="24" height="5.2" rx="2.6" fill="currentColor" />
-      <rect
-        x="7"
-        y="14.4"
-        width="18"
-        height="5.2"
-        rx="2.6"
-        fill="currentColor"
-        opacity="0.68"
-      />
-      <rect
-        x="10"
-        y="6.8"
-        width="12"
-        height="5.2"
-        rx="2.6"
-        fill="currentColor"
-        opacity="0.4"
-      />
-    </svg>
-  )
-}
-
-const linkClass =
-  'text-[0.95rem] font-medium text-ink/80 no-underline transition-colors hover:text-crimson'
+const LINKS = [
+  { href: '#how', label: 'How it works' },
+  { href: '#topics', label: 'Topics' },
+  { href: '#pricing', label: 'Pricing' },
+]
 
 export default function Nav() {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between gap-5 bg-gradient-to-b from-cream/90 to-transparent px-[clamp(20px,4vw,56px)] py-[18px]">
-      <a
-        href="#top"
-        className="flex items-center gap-2.5 text-[1.18rem] font-extrabold tracking-tight text-ink no-underline"
-      >
-        <FoundationMark />
-        <span>YouLearn AI</span>
+    <header className="relative z-40 mx-auto flex max-w-[1560px] items-center justify-between px-5 py-4 sm:px-8 lg:px-12 lg:py-6 xl:px-16">
+      <a href="#top" className="flex items-center gap-3 rounded-full text-ink">
+        <span className="grid size-11 place-items-center rounded-full bg-crimson shadow-[0_8px_18px_-8px_rgba(139,26,43,0.9)]">
+          <Mascot sticker className="w-8 text-ink" />
+        </span>
+        <span className="text-[1.2rem] font-semibold tracking-tight">Promptly</span>
       </a>
 
-      <nav className="flex items-center gap-[26px]">
-        <a href="#how" className={`${linkClass} max-[640px]:hidden`}>
-          How it works
-        </a>
-        <a href="#topics" className={`${linkClass} max-[640px]:hidden`}>
-          Topics
-        </a>
-        <Button>Get started</Button>
+      <nav className="hidden items-center gap-9 md:flex" aria-label="Main">
+        {LINKS.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="text-[0.93rem] font-medium text-ink/85 transition-colors hover:text-crimson"
+          >
+            {link.label}
+          </a>
+        ))}
+        <Button href="#start" className="ml-1">
+          Get started
+        </Button>
       </nav>
+
+      <button
+        type="button"
+        className="grid size-11 place-items-center rounded-full bg-white/80 text-ink shadow-sm ring-1 ring-black/5 backdrop-blur md:hidden"
+        aria-label={open ? 'Close menu' : 'Open menu'}
+        aria-expanded={open}
+        aria-controls="mobile-menu"
+        onClick={() => setOpen(!open)}
+      >
+        <Icon name={open ? 'close' : 'menu'} className="size-5" />
+      </button>
+
+      {open && (
+        <nav
+          id="mobile-menu"
+          aria-label="Main"
+          className="absolute inset-x-5 top-full rounded-2xl bg-white/95 p-2 shadow-[0_24px_60px_-20px_rgba(60,30,20,0.4)] ring-1 ring-black/5 backdrop-blur sm:inset-x-8 md:hidden"
+        >
+          {LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="block rounded-xl px-4 py-3 text-[1rem] font-medium text-ink hover:bg-cream"
+            >
+              {link.label}
+            </a>
+          ))}
+          <Button href="#start" className="mt-1 w-full" onClick={() => setOpen(false)}>
+            Get started
+          </Button>
+        </nav>
+      )}
     </header>
   )
 }

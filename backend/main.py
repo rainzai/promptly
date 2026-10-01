@@ -56,14 +56,6 @@ def llm_error(request: Request, exc: helper.LLMError) -> JSONResponse:
     """The LLM proxy failed or answered with unusable output: a bad gateway, not our bug."""
     return JSONResponse(status_code=502, content={"detail": str(exc)})
 
-_STATIC_DIR = Path(__file__).parent / "static"
-
-
-@app.get("/", include_in_schema=False)
-def landing() -> FileResponse:
-    """Serve the landing page."""
-    return FileResponse(_STATIC_DIR / "landing.html")
-
 
 @app.get("/health", tags=["meta"])
 def health() -> dict:
