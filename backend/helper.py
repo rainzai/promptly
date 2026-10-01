@@ -107,13 +107,22 @@ def chat_json(
 
 Model = TypeVar("Model", bound=BaseModel)
 
+# The frontend shows these strings as is. Gemini otherwise writes maths in LaTeX ($1011_2$).
+_PLAIN_TEXT = (
+    "Every string in your JSON is shown to the student as plain text, so use no Markdown "
+    "or LaTeX: write maths as plain text, such as 1011 (binary), 0x2F or 2^8."
+)
+
 
 def chat_model(schema: type[Model], system: str, user: str, *, temperature: float = 0.2) -> Model:
     """Ask for a JSON object and validate it against a pydantic model.
 
     Long structured answers are occasionally malformed; one retry usually fixes it.
     """
-    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    messages = [
+        {"role": "system", "content": f"{system}\n\n{_PLAIN_TEXT}"},
+        {"role": "user", "content": user},
+    ]
     for _ in range(2):
         try:
             return schema.model_validate(chat_json(messages, temperature=temperature))

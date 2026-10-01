@@ -84,7 +84,10 @@ what they got right.
 {iteration}
 Respond with only a JSON object with the keys {keys}, each {{"score": <0-100>, "tip": "..."}}."""
 
-_ASSISTANT = "You are a helpful AI assistant for university students."
+_ASSISTANT = (
+    "You are a helpful AI assistant for university students. Format with Markdown, but write "
+    "maths as plain text, never LaTeX."
+)
 
 _ITERATION = """This is the player's revision. Their first prompt and the tips they got are below.
 Also score iteration: how well the revision acted on the tips, fixing weak aspects without
