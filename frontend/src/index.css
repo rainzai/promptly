@@ -21,6 +21,7 @@
 
   --animate-float: float 7s ease-in-out infinite;
   --animate-bob: bob 5s ease-in-out infinite;
+  --animate-indeterminate: indeterminate 1.6s ease-in-out infinite;
 
   @keyframes float {
     0%,
@@ -40,6 +41,16 @@
     }
     50% {
       transform: translateY(6%);
+    }
+  }
+
+  /* A bar a third of its track wide, sweeping across it. */
+  @keyframes indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(300%);
     }
   }
 }

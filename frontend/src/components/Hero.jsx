@@ -36,7 +36,7 @@ function HeroCopy() {
         Turn your slides, PDFs and notes into an interactive learning journey — built around you.
       </p>
 
-      <Button href="#start" size="lg" className="mt-8 w-full sm:w-auto">
+      <Button href="/learn" size="lg" className="mt-8 w-full sm:w-auto">
         Start learning <Icon name="arrowRight" className="size-5" />
       </Button>
 

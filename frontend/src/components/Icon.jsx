@@ -119,6 +119,14 @@ const ICONS = {
   bars: <path d="M6 20v-5M12 20V9M18 20V4" />,
   play: <path fill="currentColor" stroke="none" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" />,
   arrowRight: <path d="M5 12h14M13 6l6 6-6 6" />,
+  arrowLeft: <path d="M19 12H5M11 6l-6 6 6 6" />,
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+  alert: (
+    <>
+      <circle cx="12" cy="12" r="9.5" />
+      <path d="M12 7.5v5.5M12 16.5h.01" />
+    </>
+  ),
   chevronRight: <path d="M9 6l6 6-6 6" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,

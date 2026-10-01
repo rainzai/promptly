@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Button from './Button.jsx'
 import Icon from './Icon.jsx'
-import Mascot from './Mascot.jsx'
+import Logo from './Logo.jsx'
 
 const LINKS = [
   { href: '#how', label: 'How it works' },
@@ -21,12 +21,7 @@ export default function Nav() {
 
   return (
     <header className="relative z-40 mx-auto flex max-w-[1560px] items-center justify-between px-5 py-4 sm:px-8 lg:px-12 lg:py-6 xl:px-16">
-      <a href="#top" className="flex items-center gap-3 rounded-full text-ink">
-        <span className="grid size-11 place-items-center rounded-full bg-crimson shadow-[0_8px_18px_-8px_rgba(139,26,43,0.9)]">
-          <Mascot sticker className="w-8 text-ink" />
-        </span>
-        <span className="text-[1.2rem] font-semibold tracking-tight">Promptly</span>
-      </a>
+      <Logo href="#top" />
 
       <nav className="hidden items-center gap-9 md:flex" aria-label="Main">
         {LINKS.map((link) => (
@@ -38,7 +33,7 @@ export default function Nav() {
             {link.label}
           </a>
         ))}
-        <Button href="#start" className="ml-1">
+        <Button href="/learn" className="ml-1">
           Get started
         </Button>
       </nav>
@@ -70,7 +65,7 @@ export default function Nav() {
               {link.label}
             </a>
           ))}
-          <Button href="#start" className="mt-1 w-full" onClick={() => setOpen(false)}>
+          <Button href="/learn" className="mt-1 w-full" onClick={() => setOpen(false)}>
             Get started
           </Button>
         </nav>
