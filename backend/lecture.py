@@ -6,7 +6,9 @@ correct answer earns points (more for harder levels) towards the user's
 level in that subject, see :func:`progress.add_points`.
 
 - ``POST /api/lectures``                       slides PDF -> prerequisites
+- ``GET  /api/lectures/{lecture_id}``          the same, again
 - ``POST /api/lectures/{lecture_id}/quizzes``  5 levels x 3 questions on one prerequisite
+- ``GET  /api/quizzes/{quiz_id}``              the quiz with the results so far (to resume it)
 - ``POST /api/quizzes/{quiz_id}/questions/{question_id}/answer``  answer one question
 
 State is kept in memory for the demo; swap in a database later.
@@ -115,10 +117,19 @@ class QuizRequest(BaseModel):
     prerequisite: str = Field(..., min_length=1, description="Name of the prerequisite to quiz on")
 
 
+class QuestionResult(BaseModel):
+    your_answer: int
+    correct_answer: int
+    correct: bool
+    explanation: str
+    points_earned: int
+
+
 class QuizQuestion(BaseModel):
     question_id: int
     question: str
     options: list[str]
+    result: QuestionResult | None = Field(None, description="Set once the question is answered")
 
 
 class QuizLevel(BaseModel):
@@ -130,8 +141,11 @@ class QuizLevel(BaseModel):
 
 class QuizOut(BaseModel):
     quiz_id: str
+    lecture_id: str
     user: str
     subject: str
+    answered: int = Field(..., description="Number of questions answered so far")
+    points_earned: int = Field(..., description="Points earned in this quiz so far")
     levels: list[QuizLevel]
 
 
@@ -148,29 +162,32 @@ class SubjectLevel(BaseModel):
     ranked_up: bool = Field(..., description="True if this answer reached a new rank")
 
 
-class AnswerResult(BaseModel):
+class AnswerResult(QuestionResult):
     question_id: int
     level: int
-    correct: bool
-    your_answer: int
-    correct_answer: int
-    explanation: str
-    points_earned: int
     subject_level: SubjectLevel
 
 
 @dataclass
+class _LectureState:
+    text: str
+    info: LectureOut
+
+
+@dataclass
 class _QuizState:
+    lecture_id: str
     user: str
     subject: str
     # (level, question); a question's index in this list is its question_id
     questions: list[tuple[int, Question]]
-    answered: set[int] = field(default_factory=set)
+    # question_id -> chosen option
+    answers: dict[int, int] = field(default_factory=dict)
 
 
-# lecture_id -> slide text
-_LECTURES: dict[str, str] = {}
-# quiz_id -> quiz, including the answers, which the client never sees
+# lecture_id -> slide text and what the upload returned
+_LECTURES: dict[str, _LectureState] = {}
+# quiz_id -> quiz; a question's correct answer is only revealed once it is answered
 _QUIZZES: dict[str, _QuizState] = {}
 # Makes answering atomic, so a double tap can't score the same question twice.
 _ANSWER_LOCK = threading.Lock()
@@ -187,6 +204,50 @@ def _ask(schema: type[BaseModel], system: str, user: str) -> Any:
     raise helper.LLMError(f"Model response had the wrong shape: {error}") from error
 
 
+def _result(level: int, q: Question, chosen: int) -> QuestionResult:
+    correct = chosen == q.answer_index
+    return QuestionResult(
+        your_answer=chosen,
+        correct_answer=q.answer_index,
+        correct=correct,
+        explanation=q.explanation,
+        points_earned=level * POINTS_PER_LEVEL if correct else 0,
+    )
+
+
+def _quiz_out(quiz_id: str, quiz: _QuizState) -> QuizOut:
+    with _ANSWER_LOCK:
+        answers = dict(quiz.answers)
+    questions = [
+        QuizQuestion(
+            question_id=i,
+            question=q.question,
+            options=q.options,
+            result=_result(level, q, answers[i]) if i in answers else None,
+        )
+        for i, (level, q) in enumerate(quiz.questions)
+    ]
+    return QuizOut(
+        quiz_id=quiz_id,
+        lecture_id=quiz.lecture_id,
+        user=quiz.user,
+        subject=quiz.subject,
+        answered=len(answers),
+        points_earned=sum(qq.result.points_earned for qq in questions if qq.result),
+        levels=[
+            QuizLevel(
+                level=level,
+                name=name,
+                points_per_question=level * POINTS_PER_LEVEL,
+                questions=[
+                    qq for qq, (q_level, _) in zip(questions, quiz.questions) if q_level == level
+                ],
+            )
+            for level, (name, _) in LEVELS.items()
+        ],
+    )
+
+
 @router.post("/lectures")
 def create_lecture(file: UploadFile = File(...)) -> LectureOut:
     """Upload lecture slides (PDF) and get the prerequisites they build on."""
@@ -194,27 +255,37 @@ def create_lecture(file: UploadFile = File(...)) -> LectureOut:
     if not material["text"].strip():
         raise HTTPException(422, "No text found in the PDF. Scanned slides are not supported.")
     analysis = _ask(LectureAnalysis, _PREREQUISITES_PROMPT, f"Lecture slides:\n{material['text']}")
-    lecture_id = uuid.uuid4().hex
-    _LECTURES[lecture_id] = material["text"]
-    return LectureOut(
-        lecture_id=lecture_id,
+    lecture = LectureOut(
+        lecture_id=uuid.uuid4().hex,
         title=analysis.title,
         page_count=material["page_count"],
         truncated=material["truncated"],
         prerequisites=analysis.prerequisites,
     )
+    _LECTURES[lecture.lecture_id] = _LectureState(text=material["text"], info=lecture)
+    return lecture
+
+
+@router.get("/lectures/{lecture_id}")
+def get_lecture(lecture_id: str) -> LectureOut:
+    """The lecture's title and prerequisites, as returned by the upload."""
+    lecture = _LECTURES.get(lecture_id)
+    if lecture is None:
+        raise HTTPException(404, "Lecture not found")
+    return lecture.info
 
 
 @router.post("/lectures/{lecture_id}/quizzes")
 def create_quiz(lecture_id: str, body: QuizRequest) -> QuizOut:
     """Generate 5 levels of 3 multiple-choice questions on the chosen prerequisite."""
-    if lecture_id not in _LECTURES:
+    lecture = _LECTURES.get(lecture_id)
+    if lecture is None:
         raise HTTPException(404, "Lecture not found")
     subject = " ".join(body.prerequisite.split())
     generated = _ask(
         GeneratedQuiz,
         _QUIZ_PROMPT,
-        f"Prerequisite topic: {subject}\n\nLecture slides:\n{_LECTURES[lecture_id]}",
+        f"Prerequisite topic: {subject}\n\nLecture slides:\n{lecture.text}",
     )
     questions = []
     for level, generated_level in zip(LEVELS, generated.levels):
@@ -225,25 +296,18 @@ def create_quiz(lecture_id: str, body: QuizRequest) -> QuizOut:
             q.answer_index = q.options.index(correct)
             questions.append((level, q))
     quiz_id = uuid.uuid4().hex
-    _QUIZZES[quiz_id] = _QuizState(user=body.user, subject=subject, questions=questions)
-    return QuizOut(
-        quiz_id=quiz_id,
-        user=body.user,
-        subject=subject,
-        levels=[
-            QuizLevel(
-                level=level,
-                name=name,
-                points_per_question=level * POINTS_PER_LEVEL,
-                questions=[
-                    QuizQuestion(question_id=i, question=q.question, options=q.options)
-                    for i, (q_level, q) in enumerate(questions)
-                    if q_level == level
-                ],
-            )
-            for level, (name, _) in LEVELS.items()
-        ],
-    )
+    quiz = _QuizState(lecture_id=lecture_id, user=body.user, subject=subject, questions=questions)
+    _QUIZZES[quiz_id] = quiz
+    return _quiz_out(quiz_id, quiz)
+
+
+@router.get("/quizzes/{quiz_id}")
+def get_quiz(quiz_id: str) -> QuizOut:
+    """The quiz with the results of the questions answered so far, e.g. to resume it."""
+    quiz = _QUIZZES.get(quiz_id)
+    if quiz is None:
+        raise HTTPException(404, "Quiz not found")
+    return _quiz_out(quiz_id, quiz)
 
 
 @router.post("/quizzes/{quiz_id}/questions/{question_id}/answer")
@@ -255,20 +319,15 @@ def answer_question(quiz_id: str, question_id: int, body: AnswerRequest) -> Answ
     if not 0 <= question_id < len(quiz.questions):
         raise HTTPException(404, "Question not found")
     level, q = quiz.questions[question_id]
-    correct = body.answer == q.answer_index
-    points = level * POINTS_PER_LEVEL if correct else 0
+    result = _result(level, q, body.answer)
     with _ANSWER_LOCK:
-        if question_id in quiz.answered:
+        if question_id in quiz.answers:
             raise HTTPException(409, "Question already answered")
-        quiz.answered.add(question_id)
-        subject_level = progress.add_points(quiz.user, quiz.subject, points)
+        quiz.answers[question_id] = body.answer
+        subject_level = progress.add_points(quiz.user, quiz.subject, result.points_earned)
     return AnswerResult(
+        **result.model_dump(),
         question_id=question_id,
         level=level,
-        correct=correct,
-        your_answer=body.answer,
-        correct_answer=q.answer_index,
-        explanation=q.explanation,
-        points_earned=points,
         subject_level=SubjectLevel(**subject_level),
     )
