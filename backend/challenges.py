@@ -54,7 +54,7 @@ DIFFICULTIES = {
 }
 
 _HIDDEN_PROMPT = """You design reverse-prompting challenges for university students who are learning
-to write good prompts for AI assistants such as UvA AI Chat.
+to write good prompts for AI assistants.
 You get the slides of a lecture the student is studying. Write one realistic prompt the student
 could send while studying it, about one specific concept, example or part of these slides.
 It specifies {spec}.
@@ -84,7 +84,7 @@ what they got right.
 {iteration}
 Respond with only a JSON object with the keys {keys}, each {{"score": <0-100>, "tip": "..."}}."""
 
-_ASSISTANT = "You are UvA AI Chat, a helpful assistant for university students."
+_ASSISTANT = "You are a helpful AI assistant for university students."
 
 _ITERATION = """This is the player's revision. Their first prompt and the tips they got are below.
 Also score iteration: how well the revision acted on the tips, fixing weak aspects without

@@ -62,7 +62,7 @@ function AskForm({ user, onCreated }) {
             value={prompt}
             maxLength={4000}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="The prompt you sent to UvA AI Chat"
+            placeholder="The prompt you sent to the AI"
             className={fieldClass}
           />
         </label>
@@ -173,7 +173,7 @@ function RequestCard({ request, user, onChange }) {
           {request.helped === null ? (
             <div className="rounded-2xl bg-cream p-4">
               <p className="text-[0.92rem] text-ink">
-                Try it in UvA AI Chat, then tell {review.reviewer} whether it helped.
+                Try it in your AI chat, then tell {review.reviewer} whether it helped.
               </p>
               {error && <Alert className="mt-3">{error}</Alert>}
               <div className="mt-3 flex flex-wrap gap-2">
@@ -239,7 +239,7 @@ function Help({ user }) {
       <Eyebrow>Peer help</Eyebrow>
       <Title className="mt-3">Ask a peer for prompt help</Title>
       <Lead className="mt-4">
-        Not getting what you want from UvA AI Chat? A student who's good at prompting suggests a
+        Not getting what you want from an AI assistant? A student who's good at prompting suggests a
         better prompt. You try it, and tell them whether it helped.
       </Lead>
 

@@ -28,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 import helper
 import pdf_utils
 import progress
+from config import MAX_UPLOAD_MB
 
 router = APIRouter(prefix="/api", tags=["lecture"])
 
@@ -249,6 +250,10 @@ def get_slides(lecture_id: str) -> tuple[str, str]:
 @router.post("/lectures")
 def create_lecture(file: UploadFile = File(...)) -> LectureOut:
     """Upload lecture slides (PDF) and get the prerequisites they build on."""
+    if file.size and file.size > MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(
+            413, f"The PDF is over {MAX_UPLOAD_MB} MB. Export it without videos or large images."
+        )
     material = pdf_utils.summarize_pdf(file.file)
     if not material["text"].strip():
         raise HTTPException(422, "No text found in the PDF. Scanned slides are not supported.")

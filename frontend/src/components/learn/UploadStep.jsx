@@ -19,6 +19,8 @@ const READING = [
   'Picking out the prerequisites…',
 ]
 
+const MAX_MB = 20 // MAX_UPLOAD_MB on the backend
+
 const isPdf = (file) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
 
 function formatSize(bytes) {
@@ -37,6 +39,10 @@ export default function UploadStep({ onLecture }) {
     if (!picked) return
     if (!isPdf(picked)) {
       setError(`“${picked.name}” isn't a PDF. Export your slides as a PDF and try again.`)
+      return
+    }
+    if (picked.size > MAX_MB * 1024 * 1024) {
+      setError(`“${picked.name}” is over ${MAX_MB} MB. Export it without videos or large images.`)
       return
     }
     setError(null)

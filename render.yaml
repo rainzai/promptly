@@ -1,0 +1,15 @@
+# Render blueprint: New > Blueprint in the Render dashboard, then pick this repo.
+# Render asks for LLM_API_KEY (a free Gemini key from https://aistudio.google.com/apikey).
+services:
+  - type: web
+    name: promptly
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_API_KEY
+        sync: false
+      # The free plan sleeps when idle and loses the in-memory data; demo mode
+      # brings back the example Peer Reviewer and help requests on every start.
+      - key: DEMO
+        value: "1"

@@ -1,6 +1,6 @@
 """CONTRIBUTE: peer help with prompts.
 
-A student who isn't getting what they want from UvA AI Chat asks for help with
+A student who isn't getting what they want from an AI assistant asks for help with
 just their goal, their prompt and, optionally, the answer they got: never the
 whole conversation, and reviewers never see who asked. Peer Reviewers (see
 :mod:`expertise`) get the open requests that best match their strengths first

@@ -1,9 +1,8 @@
-"""Helpers for talking to the UvA LLM proxy gateway (llmproxy.uva.nl).
+"""Helpers for talking to an OpenAI-compatible chat API (Gemini by default).
 
-The proxy speaks the OpenAI chat-completions protocol and authenticates
-with an ``x-litellm-api-key`` header. Ready-made functions:
+Which API, model and key are set in config.py. Ready-made functions:
 
-- :func:`list_models`      -> what models the proxy exposes
+- :func:`list_models`      -> what models the API exposes
 - :func:`chat`             -> free-form prompt, returns assistant text
 - :func:`chat_json`        -> prompt expecting a JSON object/array on stdout
 - :func:`chat_model`       -> JSON validated against a pydantic model
@@ -16,38 +15,45 @@ from typing import Any, TypeVar
 import requests
 from pydantic import BaseModel, ValidationError
 
-from config import LLM_API_BASE_URL, LLM_API_KEY, LLM_MODEL
+import limits
+from config import LLM_API_BASE_URL, LLM_API_KEY, LLM_AUTH_HEADER, LLM_MODEL, LLM_TEMPERATURE
 
 
 class LLMError(RuntimeError):
-    """Raised when the proxy rejects a request or a response is not valid JSON."""
+    """Raised when the API rejects a request or a response is not valid JSON."""
+
+
+class LLMBusy(LLMError):
+    """The API is rate-limiting us or is overloaded; trying again later should work."""
 
 
 def _headers() -> dict[str, str]:
     if not LLM_API_KEY:
         raise LLMError("LLM_API_KEY is not set. Add it to .env (see .env.example).")
-    return {"x-litellm-api-key": LLM_API_KEY}
+    if LLM_AUTH_HEADER.lower() == "authorization":
+        return {"Authorization": f"Bearer {LLM_API_KEY}"}
+    return {LLM_AUTH_HEADER: LLM_API_KEY}
 
 
 def _request(method: str, path: str, *, timeout: float, **kwargs: Any) -> Any:
-    """Call the proxy and return the JSON body; every failure becomes an LLMError."""
+    """Call the API and return the JSON body; every failure becomes an LLMError."""
     try:
         resp = requests.request(
             method, f"{LLM_API_BASE_URL}{path}", headers=_headers(), timeout=timeout, **kwargs
         )
         resp.raise_for_status()
     except requests.HTTPError as exc:
-        raise LLMError(
-            f"LLM proxy returned {exc.response.status_code}: {exc.response.text[:300]}"
-        ) from exc
+        status = exc.response.status_code
+        error = LLMBusy if status in (429, 503) else LLMError
+        raise error(f"LLM API returned {status}: {exc.response.text[:300]}") from exc
     except requests.RequestException as exc:
-        raise LLMError(f"Could not reach the LLM proxy: {exc}") from exc
+        raise LLMError(f"Could not reach the LLM API: {exc}") from exc
     return resp.json()
 
 
 def list_models() -> list[str]:
-    """Return the model ids exposed by the proxy."""
-    return [model["id"] for model in _request("GET", "/v1/models", timeout=30)["data"]]
+    """Return the model ids exposed by the API."""
+    return [model["id"] for model in _request("GET", "/models", timeout=30)["data"]]
 
 
 def chat(
@@ -58,15 +64,16 @@ def chat(
     max_tokens: int | None = None,
 ) -> str:
     """Send a chat request and return the assistant's text reply."""
+    limits.spend()
     payload: dict[str, Any] = {
         "model": model or LLM_MODEL,
         "messages": messages,
-        "temperature": temperature,
+        "temperature": temperature if LLM_TEMPERATURE is None else LLM_TEMPERATURE,
     }
     if max_tokens is not None:
         payload["max_tokens"] = max_tokens
 
-    data = _request("POST", "/v1/chat/completions", json=payload, timeout=120)
+    data = _request("POST", "/chat/completions", json=payload, timeout=120)
     return data["choices"][0]["message"]["content"]
 
 

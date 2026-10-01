@@ -305,7 +305,7 @@ function Review({ reviewer }) {
           <Title className="mt-3">Help other students prompt better</Title>
           <Lead className="mt-4">
             Peer Reviewers improve the prompts of students who aren't getting what they want from
-            UvA AI Chat. It's a role you earn: show steady prompting skill over several reverse-prompt
+            an AI assistant. It's a role you earn: show steady prompting skill over several reverse-prompt
             challenges.
           </Lead>
         </div>
