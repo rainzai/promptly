@@ -126,13 +126,21 @@ export default function TopicStep({ lecture, onQuiz, onNewSlides }) {
 
       {error && <Alert className="mt-4">{error}</Alert>}
 
-      <button
-        type="button"
-        onClick={onNewSlides}
-        className="mt-8 inline-flex items-center gap-2 rounded-full text-[0.92rem] font-medium text-muted transition hover:text-crimson"
-      >
-        <Icon name="arrowLeft" className="size-4" /> Upload different slides
-      </button>
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+        <button
+          type="button"
+          onClick={onNewSlides}
+          className="inline-flex items-center gap-2 rounded-full text-[0.92rem] font-medium text-muted transition hover:text-crimson"
+        >
+          <Icon name="arrowLeft" className="size-4" /> Upload different slides
+        </button>
+        <a
+          href="/play"
+          className="inline-flex items-center gap-2 rounded-full text-[0.92rem] font-semibold text-crimson hover:underline"
+        >
+          Practise prompting on these slides <Icon name="arrowRight" className="size-4" />
+        </a>
+      </div>
     </form>
   )
 }

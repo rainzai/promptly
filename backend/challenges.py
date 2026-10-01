@@ -1,12 +1,12 @@
 """PLAY: reverse-prompt challenges.
 
-The model writes a hidden prompt a student might send to an AI assistant, and
-answers it. The player sees only the answer and writes the prompt they think
+The model writes a hidden prompt a student might send to an AI assistant while
+studying the lecture they uploaded (see :mod:`lecture`), and answers it. The player sees only the answer and writes the prompt they think
 produced it. That prompt is scored per skill (see :mod:`expertise`). One
 revision is allowed, which also scores Iteration. Finishing reveals the hidden
 prompt.
 
-- ``POST /api/challenges``                                a new challenge for a user
+- ``POST /api/challenges``                                a new challenge on a lecture's slides
 - ``GET  /api/challenges/{challenge_id}``                 the challenge so far (to resume it)
 - ``POST /api/challenges/{challenge_id}/attempts``        submit a prompt, get scored
 - ``POST /api/challenges/{challenge_id}/reveal``          stop revising and see the hidden prompt
@@ -25,24 +25,24 @@ from pydantic import BaseModel, ConfigDict, Field
 
 import expertise
 import helper
+import lecture
 
 router = APIRouter(prefix="/api", tags=["challenges"])
 
 MAX_ATTEMPTS = 2  # a first try and one revision
 
+# What the student wants from the AI; the slides decide what it is about.
 THEMES = [
-    "explaining a concept from a university course to a specific audience",
-    "summarising a short text that is included in the prompt",
-    "making a study plan for an exam",
-    "drafting an email to a lecturer, tutor or project group",
-    "writing practice questions about a topic",
-    "comparing two theories, methods or tools",
-    "giving feedback on a short paragraph that is included in the prompt",
-    "brainstorming ideas for a project or essay topic",
-    "rewriting a short text that is included in the prompt for a different reader",
-    "explaining what a short piece of code does",
-    "turning lecture notes that are included in the prompt into flashcards",
-    "preparing for a presentation or oral exam",
+    "explaining a concept from the slides to a specific audience",
+    "summarising a short excerpt from the slides that is included in the prompt",
+    "making a revision plan or checklist for this lecture",
+    "writing practice questions about a concept from the slides",
+    "comparing two concepts, methods or examples from the slides",
+    "turning a short excerpt from the slides, included in the prompt, into flashcards",
+    "working through a concrete example of a concept from the slides",
+    "clearing up a common misconception about a concept from the slides",
+    "preparing to explain a topic from the slides in a presentation or oral exam",
+    "drafting a question to the lecturer about something in the slides",
 ]
 
 # difficulty -> what the hidden prompt specifies
@@ -55,10 +55,14 @@ DIFFICULTIES = {
 
 _HIDDEN_PROMPT = """You design reverse-prompting challenges for university students who are learning
 to write good prompts for AI assistants such as UvA AI Chat.
-Write one realistic prompt a student could send. It specifies {spec}.
-It is self-contained: any text the task is about is included in the prompt itself.
+You get the slides of a lecture the student is studying. Write one realistic prompt the student
+could send while studying it, about one specific concept, example or part of these slides.
+It specifies {spec}.
+It is self-contained: the AI will not see the slides, so any excerpt the task works on is quoted
+in the prompt itself (at most 80 words).
 It contains no personal information, and leads to an answer of at most 200 words.
-Write it in English, the way a student would type it.
+Write it in the same language as the slide text (English slides get an English prompt, even
+though the student is at a Dutch university), the way a student would type it.
 
 Respond with only a JSON object: {{"prompt": "..."}}"""
 
@@ -91,6 +95,7 @@ class ChallengeRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     user: str = Field(..., min_length=1, max_length=60)
+    lecture_id: str = Field(..., description="The uploaded lecture the challenge is about")
 
 
 class AttemptRequest(BaseModel):
@@ -115,6 +120,8 @@ class Attempt(BaseModel):
 class ChallengeOut(BaseModel):
     challenge_id: str
     user: str
+    lecture_id: str
+    lecture_title: str
     theme: str
     difficulty: int = Field(..., ge=1, le=3)
     answer: str = Field(..., description="The AI answer the player has to find the prompt for")
@@ -149,6 +156,8 @@ class _Grades(BaseModel):
 @dataclass
 class _Challenge:
     user: str
+    lecture_id: str
+    lecture_title: str
     theme: str
     difficulty: int
     hidden_prompt: str
@@ -166,6 +175,8 @@ def _out(challenge_id: str, c: _Challenge) -> ChallengeOut:
     return ChallengeOut(
         challenge_id=challenge_id,
         user=c.user,
+        lecture_id=c.lecture_id,
+        lecture_title=c.lecture_title,
         theme=c.theme,
         difficulty=c.difficulty,
         answer=c.answer,
@@ -226,14 +237,15 @@ def _expertise_scores(c: _Challenge) -> dict[str, int]:
 
 @router.post("/challenges")
 def create_challenge(body: ChallengeRequest) -> ChallengeOut:
-    """A new reverse-prompt challenge, harder as the player's level goes up."""
+    """A new reverse-prompt challenge on the lecture's slides, harder as the player's level goes up."""
+    title, slides = lecture.get_slides(body.lecture_id)
     level = expertise.get_expertise(body.user).level
     difficulty = 1 if level <= 3 else 2 if level <= 6 else 3
     theme = random.choice(THEMES)
     hidden = helper.chat_model(
         _HiddenPrompt,
         _HIDDEN_PROMPT.format(spec=DIFFICULTIES[difficulty]),
-        f"Theme: {theme}",
+        f"Theme: {theme}\n\nLecture: {title}\n\nSlides:\n{slides}",
         temperature=0.9,
     )
     answer = helper.chat(
@@ -246,6 +258,8 @@ def create_challenge(body: ChallengeRequest) -> ChallengeOut:
     challenge_id = uuid.uuid4().hex
     challenge = _Challenge(
         user=body.user,
+        lecture_id=body.lecture_id,
+        lecture_title=title,
         theme=theme,
         difficulty=difficulty,
         hidden_prompt=hidden.prompt,

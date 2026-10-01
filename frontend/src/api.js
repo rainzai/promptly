@@ -62,7 +62,9 @@ export const getProgress = (user) => request(`/progress/${id(user)}`)
 
 // PLAY: reverse-prompt challenges
 
-export const createChallenge = (user) => request('/challenges', post({ user }))
+/** A new challenge built from the slides of an uploaded lecture. */
+export const createChallenge = (user, lectureId) =>
+  request('/challenges', post({ user, lecture_id: lectureId }))
 
 export const getChallenge = (challengeId) => request(`/challenges/${id(challengeId)}`)
 

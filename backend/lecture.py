@@ -11,6 +11,8 @@ level in that subject, see :func:`progress.add_points`.
 - ``GET  /api/quizzes/{quiz_id}``              the quiz with the results so far (to resume it)
 - ``POST /api/quizzes/{quiz_id}/questions/{question_id}/answer``  answer one question
 
+The reverse-prompt challenges in :mod:`challenges` are built from the same slides.
+
 State is kept in memory for the demo; swap in a database later.
 """
 from __future__ import annotations
@@ -234,6 +236,14 @@ def _quiz_out(quiz_id: str, quiz: _QuizState) -> QuizOut:
             for level, (name, _) in LEVELS.items()
         ],
     )
+
+
+def get_slides(lecture_id: str) -> tuple[str, str]:
+    """The lecture's title and slide text, for other features built on the same upload."""
+    lecture = _LECTURES.get(lecture_id)
+    if lecture is None:
+        raise HTTPException(404, "Lecture not found. Upload your slides again.")
+    return lecture.info.title, lecture.text
 
 
 @router.post("/lectures")

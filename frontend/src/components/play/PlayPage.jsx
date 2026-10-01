@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
-import { createChallenge, getChallenge, getExpertise, revealChallenge, submitAttempt } from '../../api.js'
+import {
+  createChallenge,
+  getChallenge,
+  getExpertise,
+  getLecture,
+  revealChallenge,
+  submitAttempt,
+} from '../../api.js'
 import { useSearchParam } from '../../url.js'
+import { saveLecture, savedLecture } from '../../user.js'
 import AppLayout from '../AppLayout.jsx'
 import Button from '../Button.jsx'
 import Icon from '../Icon.jsx'
@@ -10,13 +18,35 @@ import { SkillsCard } from '../expertise/ExpertisePage.jsx'
 import { Alert, Card, Eyebrow, Lead, NameGate, ScoreRing, SkillRow, Title, fieldClass } from '../ui.jsx'
 
 const HOW_IT_WORKS = [
-  { icon: 'book', title: 'Read the answer', text: 'An AI wrote it for a hidden prompt.' },
+  { icon: 'book', title: 'Read the answer', text: 'An AI answered a hidden prompt about your slides.' },
   { icon: 'message', title: 'Write the prompt', text: 'Scored on intent, audience, structure and constraints.' },
   { icon: 'refresh', title: 'Revise once', text: 'Use the hints. Your revision also scores Iteration.' },
 ]
 
 function Intro({ user, error, onStart }) {
   const [expertise, setExpertise] = useState(null)
+  // The last uploaded lecture, checked with the server: undefined while checking, null if none.
+  const [lecture, setLecture] = useState(undefined)
+
+  useEffect(() => {
+    const saved = savedLecture()
+    if (!saved) {
+      setLecture(null)
+      return
+    }
+    let cancelled = false
+    getLecture(saved.id).then(
+      (data) => !cancelled && setLecture(data),
+      (err) => {
+        if (cancelled) return
+        if (err.status === 404) saveLecture(null) // the server restarted and forgot it
+        setLecture(null)
+      },
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -32,8 +62,8 @@ function Intro({ user, error, onStart }) {
         <Eyebrow>Play · Reverse prompting</Eyebrow>
         <Title className="mt-3">Can you guess the prompt?</Title>
         <Lead className="mt-4">
-          You get an answer an AI wrote. Write the prompt you think produced it. The closer you get,
-          the better you understand what makes prompts work.
+          You get an answer an AI wrote about your lecture. Write the prompt you think produced it.
+          The closer you get, the better you understand what makes prompts work.
         </Lead>
         <ol className="mt-8 space-y-4">
           {HOW_IT_WORKS.map((step, i) => (
@@ -51,9 +81,39 @@ function Intro({ user, error, onStart }) {
           ))}
         </ol>
         {error && <Alert className="mt-6">{error}</Alert>}
-        <Button size="lg" className="mt-8 w-full sm:w-auto" onClick={onStart}>
-          Start a challenge <Icon name="arrowRight" className="size-5" />
-        </Button>
+        {lecture && (
+          <>
+            <div className="mt-8 flex items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-line">
+              <span className="grid h-12 w-10 shrink-0 place-items-center rounded-lg bg-crimson/8 ring-1 ring-crimson/15">
+                <span className="rounded bg-crimson px-1 py-0.5 text-[9px] font-bold tracking-wide text-white">PDF</span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[0.75rem] font-semibold tracking-[0.1em] text-faint uppercase">
+                  Challenges about
+                </span>
+                <span className="block truncate font-semibold text-ink">{lecture.title}</span>
+              </span>
+              <a href="/learn" className="shrink-0 text-[0.88rem] font-semibold text-crimson hover:underline">
+                Other slides
+              </a>
+            </div>
+            <Button size="lg" className="mt-5 w-full sm:w-auto" onClick={() => onStart(lecture.lecture_id)}>
+              Start a challenge <Icon name="arrowRight" className="size-5" />
+            </Button>
+          </>
+        )}
+        {lecture === null && (
+          <div className="mt-8 rounded-2xl bg-white p-5 ring-1 ring-line">
+            <p className="font-semibold text-ink">Upload your lecture slides first</p>
+            <p className="mt-1 text-[0.92rem] text-muted">
+              Every challenge is about the slides you're studying, so you practise prompting on your
+              own course.
+            </p>
+            <Button href="/learn" className="mt-4">
+              <Icon name="upload" className="size-4" /> Upload slides
+            </Button>
+          </div>
+        )}
       </div>
       {expertise && (
         <div>
@@ -194,7 +254,7 @@ function ChallengeView({ challenge, change, onUpdate, onNext }) {
     <section className="pt-4 sm:pt-8">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div>
-          <Eyebrow>Reverse prompting</Eyebrow>
+          <Eyebrow>Reverse prompting · {challenge.lecture_title}</Eyebrow>
           <h1 className="mt-2 text-[clamp(1.7rem,4.4vw,2.4rem)] leading-[1.08] font-bold tracking-[-0.035em] text-ink">
             {challenge.finished ? 'Here’s how you did' : 'What prompt produced this answer?'}
           </h1>
@@ -301,11 +361,11 @@ function Play({ user }) {
     }
   }, [challengeId, needLoad])
 
-  const start = async () => {
+  const start = async (lectureId) => {
     setStarting(true)
     setError(null)
     try {
-      const created = await createChallenge(user)
+      const created = await createChallenge(user, lectureId)
       setChallenge(created)
       setChange(null)
       setChallengeId(created.challenge_id)
@@ -320,7 +380,7 @@ function Play({ user }) {
     return (
       <Working
         title="Writing a challenge for you"
-        messages={['Thinking of a task a student might have…', 'Letting the AI answer it…']}
+        messages={['Picking something from your slides…', 'Letting the AI answer it…']}
       />
     )
   }
@@ -334,8 +394,8 @@ function Play({ user }) {
         <p className="mt-3 text-muted">
           {loadError.status === 404 ? 'Challenges are kept until the server restarts.' : loadError.message}
         </p>
-        <Button size="lg" className="mt-8" onClick={start}>
-          Start a new challenge
+        <Button size="lg" className="mt-8" onClick={() => setChallengeId(null)}>
+          Back to Play
         </Button>
       </section>
     )
@@ -359,7 +419,7 @@ function Play({ user }) {
             : updatedChange,
         )
       }}
-      onNext={start}
+      onNext={() => start(challenge.lecture_id)}
     />
   )
 }

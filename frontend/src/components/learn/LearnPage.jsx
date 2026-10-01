@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getLecture, getQuiz } from '../../api.js'
 import AppLayout from '../AppLayout.jsx'
+import { saveLecture } from '../../user.js'
 import Button from '../Button.jsx'
 import Icon from '../Icon.jsx'
 import Mascot from '../Mascot.jsx'
@@ -123,6 +124,11 @@ export default function LearnPage() {
       cancelled = true
     }
   }, [route, needLecture, needQuiz, attempt])
+
+  // Play builds its challenges from the last lecture the student worked on.
+  useEffect(() => {
+    if (lecture) saveLecture(lecture)
+  }, [lecture])
 
   const step = route.quizId ? 2 : route.lectureId ? 1 : 0
   const loadError = failure?.route === route ? failure.error : null
