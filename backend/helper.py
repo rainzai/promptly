@@ -23,15 +23,29 @@ class LLMError(RuntimeError):
 
 def _headers() -> dict[str, str]:
     if not LLM_API_KEY:
-        raise LLMError("LLM_API_KEY is not set. Add it to backend/.env (see main.py).")
+        raise LLMError("LLM_API_KEY is not set. Add it to .env (see .env.example).")
     return {"x-litellm-api-key": LLM_API_KEY}
+
+
+def _request(method: str, path: str, *, timeout: float, **kwargs: Any) -> Any:
+    """Call the proxy and return the JSON body; every failure becomes an LLMError."""
+    try:
+        resp = requests.request(
+            method, f"{LLM_API_BASE_URL}{path}", headers=_headers(), timeout=timeout, **kwargs
+        )
+        resp.raise_for_status()
+    except requests.HTTPError as exc:
+        raise LLMError(
+            f"LLM proxy returned {exc.response.status_code}: {exc.response.text[:300]}"
+        ) from exc
+    except requests.RequestException as exc:
+        raise LLMError(f"Could not reach the LLM proxy: {exc}") from exc
+    return resp.json()
 
 
 def list_models() -> list[str]:
     """Return the model ids exposed by the proxy."""
-    resp = requests.get(f"{LLM_API_BASE_URL}/v1/models", headers=_headers(), timeout=30)
-    resp.raise_for_status()
-    return [model["id"] for model in resp.json()["data"]]
+    return [model["id"] for model in _request("GET", "/v1/models", timeout=30)["data"]]
 
 
 def chat(
@@ -50,14 +64,8 @@ def chat(
     if max_tokens is not None:
         payload["max_tokens"] = max_tokens
 
-    resp = requests.post(
-        f"{LLM_API_BASE_URL}/v1/chat/completions",
-        headers=_headers(),
-        json=payload,
-        timeout=120,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    data = _request("POST", "/v1/chat/completions", json=payload, timeout=120)
+    return data["choices"][0]["message"]["content"]
 
 
 def chat_json(
@@ -68,18 +76,24 @@ def chat_json(
 ) -> Any:
     """Send a chat request and parse the reply as JSON.
 
-    Strips common ```json fences before parsing. Raises :class:`LLMError`
-    if the reply is not valid JSON.
+    Tolerates ```json fences and prose around the JSON. Raises
+    :class:`LLMError` if the reply contains no valid JSON.
     """
     content = chat(messages, model=model, temperature=temperature).strip()
-    if content.startswith("```"):
-        content = content.split("```", 2)[1]
-        if content.startswith("json"):
-            content = content[4:]
     try:
         return json.loads(content)
-    except json.JSONDecodeError as exc:
-        raise LLMError(f"Model did not return valid JSON: {content[:500]}") from exc
+    except json.JSONDecodeError:
+        pass
+    # Fall back to the outermost {...} or [...] span.
+    starts = [i for i in (content.find("{"), content.find("[")) if i != -1]
+    if starts:
+        start = min(starts)
+        end = content.rfind("}" if content[start] == "{" else "]")
+        try:
+            return json.loads(content[start : end + 1])
+        except json.JSONDecodeError:
+            pass
+    raise LLMError(f"Model did not return valid JSON: {content[:500]}")
 
 
 if __name__ == "__main__":  # pragma: no cover

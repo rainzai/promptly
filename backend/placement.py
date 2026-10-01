@@ -8,7 +8,7 @@
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 import helper
 import pdf_utils
@@ -103,9 +103,16 @@ def create_placement_check(body: TopicRequest) -> dict:
 @router.post("/placement/evaluate")
 def evaluate_placement(body: PlacementCheck) -> dict:
     """Estimate the starting level; the student can override it later."""
-    answers = "\n".join(f"- {a}" for a in body.answers)
+    if len(body.answers) != len(body.questions):
+        raise HTTPException(
+            422, f"Expected {len(body.questions)} answers, got {len(body.answers)}"
+        )
+    results = "\n".join(
+        f"- [{q.level}] {q.question} -> {'correct' if a == q.answer else 'wrong'}"
+        for q, a in zip(body.questions, body.answers)
+    )
     prompt = (
-        f"Topic: {body.topic}\nStudent answers:\n{answers}\n\n"
+        f"Topic: {body.topic}\nPlacement results:\n{results}\n\n"
         "Estimate the best starting stage: Foundations, Core concepts, "
         "Applied concepts or Target topic. Return JSON:\n"
         '{"estimated_level": "...", "reason": "<short reason>", '

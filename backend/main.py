@@ -16,13 +16,15 @@ for _p in (BACKEND_DIR, BACKEND_DIR.parent):  # flat imports + root `pdf` module
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+import helper
 from bootcamp import router as bootcamp_router
 from checkpoint import router as checkpoint_router
+from lecture import router as lecture_router
 from placement import router as placement_router
 from progress import router as progress_router
 
@@ -43,10 +45,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(lecture_router)
 app.include_router(placement_router)
 app.include_router(bootcamp_router)
 app.include_router(checkpoint_router)
 app.include_router(progress_router)
+
+
+@app.exception_handler(helper.LLMError)
+def llm_error(request: Request, exc: helper.LLMError) -> JSONResponse:
+    """The LLM proxy failed or answered with unusable output: a bad gateway, not our bug."""
+    return JSONResponse(status_code=502, content={"detail": str(exc)})
 
 _STATIC_DIR = Path(__file__).parent / "static"
 
