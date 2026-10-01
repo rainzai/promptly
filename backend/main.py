@@ -35,8 +35,9 @@ from progress import router as progress_router
 app = FastAPI(
     title="Promptly",
     description=(
-        "Upload your study material, get a prerequisite map, diagnose your "
-        "skill level, train through a bootcamp, prove mastery, and compete."
+        "Upload your lecture slides, test yourself on what the lecture builds on, "
+        "practise prompting with reverse-prompt challenges, build your prompt "
+        "expertise, and help other students as a Peer Reviewer."
     ),
     version="0.1.0",
 )

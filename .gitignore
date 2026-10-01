@@ -2,3 +2,5 @@
 .venv/
 __pycache__/
 .DS_Store
+# Lecture slides are copyrighted course material: keep them out of the repo.
+*.pdf
