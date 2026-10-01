@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/play', label: 'Play' },
   { href: '/help', label: 'Peer help' },
   { href: '/expertise', label: 'Expertise' },
+  { href: '/team', label: 'Team' },
 ]
 
 export default function Nav() {

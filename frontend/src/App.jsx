@@ -4,6 +4,7 @@ import LearnPage from './components/learn/LearnPage.jsx'
 import HelpPage from './components/peer/HelpPage.jsx'
 import ReviewPage from './components/peer/ReviewPage.jsx'
 import PlayPage from './components/play/PlayPage.jsx'
+import TeamPage from './components/TeamPage.jsx'
 
 // A handful of pages, so no router: links between them load the page fresh.
 const PAGES = {
@@ -12,6 +13,7 @@ const PAGES = {
   '/expertise': ExpertisePage,
   '/help': HelpPage,
   '/review': ReviewPage,
+  '/team': TeamPage,
 }
 
 const Page = PAGES[window.location.pathname.replace(/\/+$/, '')] ?? Hero

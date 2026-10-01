@@ -103,10 +103,16 @@ export default function AppLayout({ title, wide = false, children }) {
       </main>
       <footer className="mx-auto max-w-[880px] px-5 pb-10 text-center text-[0.82rem] leading-relaxed text-muted sm:px-8">
         Promptly sends what you upload and type to an AI model. On a free plan the AI provider may
-        use it to improve its models, so don't share anything confidential.{' '}
-        <a href="https://github.com/seanzlli/promptly" className="underline underline-offset-2 hover:text-crimson">
-          Source on GitHub
-        </a>
+        use it to improve its models, so don't share anything confidential.
+        <span className="mt-2 block">
+          <a href="/team" className="underline underline-offset-2 hover:text-crimson">
+            Made by Team 12
+          </a>
+          {' · '}
+          <a href="https://github.com/seanzlli/promptly" className="underline underline-offset-2 hover:text-crimson">
+            Source on GitHub
+          </a>
+        </span>
       </footer>
     </div>
   )
