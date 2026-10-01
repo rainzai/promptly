@@ -1,6 +1,4 @@
-import Icon from './Icon.jsx'
-
-// The study material floating towards the mascot: a PDF, slides, notes and a video.
+// The study material floating towards the mascot: a PDF, slides and notes.
 
 function Doc({ className = '', children }) {
   return (
@@ -47,9 +45,6 @@ export default function FloatingDocs({ className = '' }) {
         <span className="block h-2 w-10 rounded-full bg-[#d8cfc6]" />
         <Lines widths={['w-full', 'w-full', 'w-4/5', 'w-full']} />
       </Doc>
-      <div className="absolute left-[196px] top-[146px] grid h-[54px] w-[74px] -rotate-[5deg] place-items-center rounded-xl bg-gradient-to-b from-[#a52537] to-crimson-dark shadow-[0_18px_30px_-14px_rgba(139,26,43,0.9)] motion-safe:animate-float [animation-delay:-1s]">
-        <Icon name="play" className="size-6 text-white" />
-      </div>
       {/* The documents flow into the mascot. */}
       <svg
         viewBox="0 0 90 70"
