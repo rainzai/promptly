@@ -20,10 +20,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+import demo
 import helper
 from bootcamp import router as bootcamp_router
 from challenges import router as challenges_router
 from checkpoint import router as checkpoint_router
+from config import DEMO
 from expertise import router as expertise_router
 from lecture import router as lecture_router
 from peer_review import router as peer_review_router
@@ -55,6 +57,9 @@ app.include_router(progress_router)
 app.include_router(challenges_router)
 app.include_router(expertise_router)
 app.include_router(peer_review_router)
+
+if DEMO:
+    demo.seed()
 
 
 @app.exception_handler(helper.LLMError)

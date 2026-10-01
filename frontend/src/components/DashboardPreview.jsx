@@ -5,11 +5,10 @@ import Icon from './Icon.jsx'
 
 const STEPS = [
   ['upload', 'Upload'],
-  ['nodes', 'Map'],
-  ['search', 'Diagnose'],
-  ['book', 'Train'],
-  ['trophy', 'Progress'],
-  ['growth', 'Compete'],
+  ['book', 'Learn'],
+  ['target', 'Play'],
+  ['award', 'Prove'],
+  ['message', 'Help'],
 ]
 
 const PATH = [
@@ -19,12 +18,12 @@ const PATH = [
   ['target', 'Target Topic'],
 ]
 
-const LEADERS = [
-  ['You', 860],
-  ['Friend A', 740],
-  ['Friend B', 680],
-  ['Friend C', 620],
-  ['Friend D', 540],
+const SKILLS = [
+  ['Intent recognition', 92],
+  ['Audience & tone', 81],
+  ['Structure & formatting', 95],
+  ['Constraints', 68],
+  ['Iteration', 84],
 ]
 
 const BADGES = [
@@ -205,36 +204,26 @@ function XpRing() {
   )
 }
 
-function Leaderboard() {
+function Expertise() {
   return (
     <Card className="order-3 col-span-2 p-2.5 md:order-2 md:col-span-1">
-      <div className="text-[12.5px] font-semibold text-ink">Leaderboard</div>
-      <div className="mt-0.5 flex items-center gap-1 text-[10px] text-faint">
-        <Icon name="lock" className="size-2.5" strokeWidth={2.5} /> Private · 5 friends
+      <div className="text-[12.5px] font-semibold text-ink">Prompt expertise</div>
+      <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-gold">
+        <Icon name="award" className="size-2.5" strokeWidth={2.5} /> Peer Reviewer
       </div>
-      <ol className="mt-1.5 space-y-px">
-        {LEADERS.map(([name, xp], i) => (
-          <li
-            key={name}
-            className={`flex items-center gap-2 rounded-lg px-1.5 py-[3px] text-[11px] ${
-              i === 0 ? 'bg-crimson/8 font-semibold text-crimson' : 'text-ink'
-            }`}
-          >
-            <span className="w-2.5 text-[10px] font-medium text-faint">{i + 1}</span>
-            {i === 0 ? (
-              <span className="grid size-[18px] place-items-center rounded-full bg-gold/15 text-gold">
-                <Icon name="crown" className="size-3" />
-              </span>
-            ) : (
-              <span className="grid size-[18px] place-items-center overflow-hidden rounded-full bg-[#ece6e0] text-[#b9b0a7]">
-                <Icon name="user" className="mt-1 size-4" />
-              </span>
-            )}
-            <span className="flex-1">{name}</span>
-            <span className={`text-[10px] ${i === 0 ? 'text-crimson' : 'text-muted'}`}>{xp} XP</span>
+      <ul className="mt-1.5 space-y-[5px]">
+        {SKILLS.map(([skill, score]) => (
+          <li key={skill} className="text-[10.5px]">
+            <span className="flex justify-between text-ink">
+              {skill}
+              <span className="text-muted">{score}</span>
+            </span>
+            <span className="mt-0.5 block h-1 rounded-full bg-[#f2e8e2]">
+              <span className="block h-full rounded-full bg-crimson" style={{ width: `${score}%` }} />
+            </span>
           </li>
         ))}
-      </ol>
+      </ul>
     </Card>
   )
 }
@@ -291,7 +280,7 @@ export function SidePanel({ className = '' }) {
   return (
     <div className={`${panel} grid grid-cols-2 gap-2 p-2 md:grid-cols-1 ${className}`}>
       <XpRing />
-      <Leaderboard />
+      <Expertise />
       <Streak />
       <Badges />
     </div>

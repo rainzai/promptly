@@ -4,12 +4,12 @@ import HeroVisual from './HeroVisual.jsx'
 import Icon from './Icon.jsx'
 import Nav from './Nav.jsx'
 
-const STEP_TRAIL = ['Upload', 'Map', 'Diagnose', 'Train', 'Prove', 'Progress', 'Compete']
+const STEP_TRAIL = ['Upload', 'Learn', 'Play', 'Prove', 'Help']
 
 const FEATURES = [
-  { icon: 'upload', title: 'Upload', sub: 'your materials' },
-  { icon: 'brain', title: 'Get a plan', sub: 'that fits your level' },
-  { icon: 'growth', title: 'Build mastery', sub: 'and track your progress' },
+  { icon: 'upload', title: 'Upload', sub: 'your lecture slides' },
+  { icon: 'target', title: 'Play', sub: 'and learn to prompt' },
+  { icon: 'award', title: 'Help peers', sub: 'as a Peer Reviewer' },
 ]
 
 function HeroCopy() {
@@ -33,7 +33,8 @@ function HeroCopy() {
       </h1>
 
       <p className="mt-5 max-w-[27rem] text-[1.05rem] leading-relaxed text-muted sm:mt-6 sm:text-[1.15rem]">
-        Turn your slides, PDFs and notes into an interactive learning journey — built around you.
+        Prep for lectures from your own slides, learn to prompt AI like a pro, and help other
+        students get better answers.
       </p>
 
       <Button href="/learn" size="lg" className="mt-8 w-full sm:w-auto">

@@ -38,7 +38,7 @@ export default function HeroVisual() {
   return (
     <div
       role="img"
-      aria-label="Preview of the Promptly app: your learning path, a placement question, XP, a friends leaderboard and badges"
+      aria-label="Preview of the Promptly app: your learning path, a placement question, XP, your prompt expertise and badges"
       className="relative isolate -mx-5 mt-14 sm:-mx-8 lg:mx-0 lg:mt-0 lg:mr-[clamp(0px,3.5vw,64px)] lg:justify-self-end"
     >
       {/* Phones and tablets: the canal photo sits behind the preview. */}

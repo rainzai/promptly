@@ -4,9 +4,10 @@ import Icon from './Icon.jsx'
 import Logo from './Logo.jsx'
 
 const LINKS = [
-  { href: '#how', label: 'How it works' },
-  { href: '#topics', label: 'Topics' },
-  { href: '#pricing', label: 'Pricing' },
+  { href: '/learn', label: 'Learn' },
+  { href: '/play', label: 'Play' },
+  { href: '/help', label: 'Peer help' },
+  { href: '/expertise', label: 'Expertise' },
 ]
 
 export default function Nav() {

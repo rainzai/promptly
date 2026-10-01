@@ -14,3 +14,6 @@ LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-5.4-mini")
 
 # Number of characters of uploaded material sent to the LLM.
 MAX_UPLOAD_CHARS: int = int(os.getenv("MAX_UPLOAD_CHARS", "20000"))
+
+# Preload a Peer Reviewer and help requests for presenting (see demo.py).
+DEMO: bool = os.getenv("DEMO", "").lower() in {"1", "true", "yes"}
