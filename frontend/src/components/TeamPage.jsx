@@ -19,8 +19,8 @@ export default function TeamPage() {
         <Eyebrow>The team</Eyebrow>
         <Title className="mt-3">Made by Team 12</Title>
         <Lead className="mt-4">
-          Five students built Promptly during an AI hackathon at the University of Amsterdam, to help
-          students learn with AI, not just from it.
+          Five students built Promptly at the UvA/AUAS AI Chat Hackathon at NEMO Science Museum in
+          Amsterdam, to help students learn with AI, not just from it.
         </Lead>
 
         <ul className="mt-10 flex flex-wrap justify-center gap-4 sm:mt-12">

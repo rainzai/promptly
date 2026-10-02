@@ -86,8 +86,8 @@ It works on a phone too:
   module in [`backend/`](backend).
 - **Frontend:** React, [Vite](https://vite.dev) and [Tailwind CSS](https://tailwindcss.com),
   in [`frontend/`](frontend).
-- **AI:** any OpenAI-compatible chat API. The live demo uses Google's `gemini-3.5-flash-lite`
-  on the free tier. Structured answers such as quizzes and scores are requested as JSON,
+- **AI:** any OpenAI-compatible chat API. We built it on UvA AI Chat at the hackathon; the live
+  demo uses Google's `gemini-3.5-flash-lite` on the free tier, so anyone can try it. Structured answers such as quizzes and scores are requested as JSON,
   checked against a schema, and retried once if they don't fit. Each visitor gets a limited
   number of AI calls, so one person can't use up the free quota.
 - **Hosting:** one Docker container on [Render](https://render.com), where FastAPI serves both
@@ -136,7 +136,8 @@ key when it asks for `LLM_API_KEY`. [`render.yaml`](render.yaml) sets up the res
 
 ## The team
 
-Promptly was built by Team 12 during an AI hackathon at the University of Amsterdam.
+Promptly was built by Team 12 at the UvA/AUAS AI Chat Hackathon at NEMO Science Museum in
+Amsterdam on 1 October 2026.
 
 | | |
 |---|---|
