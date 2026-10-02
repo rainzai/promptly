@@ -27,6 +27,10 @@ class LLMBusy(LLMError):
     """The API is rate-limiting us or is overloaded; trying again later should work."""
 
 
+class LLMBadOutput(LLMError):
+    """The reply wasn't the JSON we asked for; asking again usually works."""
+
+
 def _headers() -> dict[str, str]:
     if not LLM_API_KEY:
         raise LLMError("LLM_API_KEY is not set. Add it to .env (see .env.example).")
@@ -62,8 +66,13 @@ def chat(
     model: str | None = None,
     temperature: float = 0.7,
     max_tokens: int | None = None,
+    json_mode: bool = False,
 ) -> str:
-    """Send a chat request and return the assistant's text reply."""
+    """Send a chat request and return the assistant's text reply.
+
+    ``json_mode`` makes the model reply with a valid JSON object (OpenAI's JSON mode, which
+    Gemini, Groq, OpenRouter and Ollama support too).
+    """
     limits.spend()
     payload: dict[str, Any] = {
         "model": model or LLM_MODEL,
@@ -72,6 +81,8 @@ def chat(
     }
     if max_tokens is not None:
         payload["max_tokens"] = max_tokens
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
 
     data = _request("POST", "/chat/completions", json=payload, timeout=120)
     return data["choices"][0]["message"]["content"]
@@ -82,13 +93,14 @@ def chat_json(
     *,
     model: str | None = None,
     temperature: float = 0.2,
+    json_mode: bool = False,
 ) -> Any:
     """Send a chat request and parse the reply as JSON.
 
     Tolerates ```json fences and prose around the JSON. Raises
-    :class:`LLMError` if the reply contains no valid JSON.
+    :class:`LLMBadOutput` if the reply contains no valid JSON.
     """
-    content = chat(messages, model=model, temperature=temperature).strip()
+    content = chat(messages, model=model, temperature=temperature, json_mode=json_mode).strip()
     try:
         return json.loads(content)
     except json.JSONDecodeError:
@@ -102,7 +114,7 @@ def chat_json(
             return json.loads(content[start : end + 1])
         except json.JSONDecodeError:
             pass
-    raise LLMError(f"Model did not return valid JSON: {content[:500]}")
+    raise LLMBadOutput(f"Model did not return valid JSON: {content[:500]}")
 
 
 Model = TypeVar("Model", bound=BaseModel)
@@ -117,7 +129,8 @@ _PLAIN_TEXT = (
 def chat_model(schema: type[Model], system: str, user: str, *, temperature: float = 0.2) -> Model:
     """Ask for a JSON object and validate it against a pydantic model.
 
-    Long structured answers are occasionally malformed; one retry usually fixes it.
+    Long structured answers are occasionally malformed or the wrong shape, even in JSON
+    mode; one retry usually fixes it.
     """
     messages = [
         {"role": "system", "content": f"{system}\n\n{_PLAIN_TEXT}"},
@@ -125,10 +138,10 @@ def chat_model(schema: type[Model], system: str, user: str, *, temperature: floa
     ]
     for _ in range(2):
         try:
-            return schema.model_validate(chat_json(messages, temperature=temperature))
-        except ValidationError as exc:
+            return schema.model_validate(chat_json(messages, temperature=temperature, json_mode=True))
+        except (ValidationError, LLMBadOutput) as exc:
             error = exc
-    raise LLMError(f"Model response had the wrong shape: {error}") from error
+    raise LLMBadOutput(f"Model response wasn't the JSON we asked for: {error}") from error
 
 
 if __name__ == "__main__":  # pragma: no cover
